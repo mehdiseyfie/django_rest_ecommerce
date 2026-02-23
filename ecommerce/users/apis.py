@@ -11,7 +11,9 @@ from ecommerce.users.selectors import get_profile
 from ecommerce.users.services import register 
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema 
+from phonenumber_field import serializerfields
+
 
 
 class ProfileApi(ApiAuthMixin, APIView):
@@ -19,7 +21,7 @@ class ProfileApi(ApiAuthMixin, APIView):
     class OutPutSerializer(serializers.ModelSerializer):
         class Meta:
             model = Profile 
-            fields = ("bio", "posts_count", "subscriber_count", "subscription_count")
+            fields = ("user",)
 
     @extend_schema(responses=OutPutSerializer)
     def get(self, request):
@@ -32,7 +34,11 @@ class RegisterApi(APIView):
 
     class InputRegisterSerializer(serializers.Serializer):
         email = serializers.EmailField(max_length=255)
-        bio = serializers.CharField(max_length=1000, required=False)
+        phone = serializerfields.PhoneNumberField() 
+        address = serializers.CharField()
+        first_name = serializers.CharField()
+        last_name = serializers.CharField() 
+        
         password = serializers.CharField(
                 validators=[
                         number_validator,
@@ -46,7 +52,12 @@ class RegisterApi(APIView):
         def validate_email(self, email):
             if BaseUser.objects.filter(email=email).exists():
                 raise serializers.ValidationError("email Already Taken")
-            return email
+            return email 
+        
+        def validate_phone(self, phone):
+            if BaseUser.objects.filter(phone=phone).exists():
+                raise serializers.ValidationError("phone number Already Exist.") 
+            return phone 
 
         def validate(self, data):
             if not data.get("password") or not data.get("confirm_password"):
@@ -63,7 +74,9 @@ class RegisterApi(APIView):
 
         class Meta:
             model = BaseUser 
-            fields = ("email", "token", "created_at", "updated_at")
+            fields = ("email", "phone", "token","address", 
+                      "first_name", "last_name", "address",
+                      "created_at", "updated_at")
 
         def get_token(self, user):
             data = dict()
@@ -84,8 +97,10 @@ class RegisterApi(APIView):
         try:
             user = register(
                     email=serializer.validated_data.get("email"),
+                    phone=serializer.validated_data.get("phone"),
+                    first_name=serializer.validated_data.get("first_name"),
+                    last_name=serializer.validated_data.get("last_name"),
                     password=serializer.validated_data.get("password"),
-                    bio=serializer.validated_data.get("bio"),
                     )
         except Exception as ex:
             return Response(
