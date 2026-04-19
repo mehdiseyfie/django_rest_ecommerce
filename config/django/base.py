@@ -17,7 +17,8 @@ LOCAL_APPS = [
     'ecommerce.core.apps.CoreConfig',
     'ecommerce.common.apps.CommonConfig',
     'ecommerce.users.apps.UsersConfig',
-    'ecommerce.authentication.apps.AuthenticationConfig',
+    'ecommerce.authentication.apps.AuthenticationConfig', 
+    'ecommerce.products.apps.ProductsConfig',
 ]
 
 THIRD_PARTY_APPS = [
