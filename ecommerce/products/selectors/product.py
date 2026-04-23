@@ -1,14 +1,9 @@
-from ecommerce.products.models import Product 
-from django.core.exceptions import ValidationError 
+from ecommerce.products.models import Product
 from django.db.models import QuerySet
+from django.shortcuts import get_object_or_404
 
-def get_product_by_name(name:str) -> Product: 
-    try: 
-        product = Product.objects.get(name=name) 
-        return product
-    except Product.DoesNotExist:
-        raise ValidationError("product doesn't exist.") 
+def get_product_by_slug(slug: str) -> Product:
+    return get_object_or_404(Product, slug=slug)
 
-def get_all_product() -> QuerySet[Product]: 
+def get_all_product() -> QuerySet[Product]:
     return Product.objects.all()
-    
