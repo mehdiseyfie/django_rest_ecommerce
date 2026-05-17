@@ -1,6 +1,3 @@
-from sys import exception
-
-from requests import delete
 from rest_framework import status, serializers 
 from rest_framework.response import Response 
 from rest_framework.views import APIView
@@ -126,7 +123,7 @@ class CartApi(APIView):
             cart_item = get_cart_item_by_slug(cart=cart, slug=slug) 
             updated_item = update_cart_item(cart_item=cart_item, quantity=validated_data["quantity"]) 
             
-        except exception as ex: 
+        except Exception as ex: 
             return Response({"error": str(ex)}, status=status.HTTP_400_BAD_REQUEST) 
         
         serializer = OutputCartItemSerializer(updated_item, context={"request": request}) 
@@ -142,7 +139,7 @@ class CartApi(APIView):
             cart_item = get_cart_item_by_slug(cart=cart, slug=slug) 
             remove_cart_item(cart_item=cart_item) 
             
-        except exception as ex: 
+        except Exception as ex: 
             return Response({"error": str(ex)}, status=status.HTTP_400_BAD_REQUEST)
         
         return Response(status=status.HTTP_204_NO_CONTENT) 
@@ -160,7 +157,7 @@ class ClearCartApi(APIView):
             if not cart: 
                 return Response({"error": "cart is not exist."}, status=status.HTTP_404_NOT_FOUND) 
             clear_cart(cart) 
-        except exception as ex: 
+        except Exception as ex: 
             return Response({"error": str(ex)}, status=status.HTTP_400_BAD_REQUEST)
         
         return Response({"detail": "cart cleared succesfully"} ,status=status.HTTP_204_NO_CONTENT) 
