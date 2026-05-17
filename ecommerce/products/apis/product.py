@@ -9,9 +9,15 @@ from ecommerce.products.selectors.product import (
 )
 from ecommerce.products.serivices.product import (
     create_product, update_product
-)
+) 
+from ecommerce.products.permissions.product_permissions import UserIsStuffOrReadOnly
+from rest_framework_simplejwt.authentication import JWTAuthentication 
 
-class ProductApi(APIView):
+
+
+class ProductApi(APIView): 
+    authentication_classes = [JWTAuthentication] 
+    permission_classes = [UserIsStuffOrReadOnly]
 
     class InputProductSerializer(serializers.Serializer):
         category = serializers.SlugRelatedField(

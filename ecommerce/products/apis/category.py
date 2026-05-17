@@ -9,9 +9,13 @@ from ecommerce.products.selectors.category import (
     get_all_category
 )
 from ecommerce.products.serivices.category import (
-    create_category, update_category)
+    create_category, update_category) 
+from ecommerce.products.permissions.product_permissions import UserIsStuffOrReadOnly
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 class CategoryApi(APIView):
+    permission_classes = [UserIsStuffOrReadOnly] 
+    authentication_classes = [JWTAuthentication]
 
     class InputCategorySerializer(serializers.Serializer):
         name = serializers.CharField()

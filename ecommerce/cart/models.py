@@ -73,7 +73,9 @@ class CartItem(BaseModel):
         verbose_name=_("Product")
     )
     quantity = models.PositiveIntegerField(default=1)
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00")) 
+    
+    slug = models.SlugField(max_length=225, unique=True, blank=True)
 
     class Meta:
         verbose_name = _("Cart Item")
@@ -95,12 +97,15 @@ class CartItem(BaseModel):
     def save(self, *args, old_quantity=None, old_price=None, **kwargs):
     
         try:
-            with transaction.atomic():
+            with transaction.atomic(): 
+                if not self.slug: 
+                    self.slug = self.product.slug
+                    
                 self.clean()
                 if not self.price:
                     if not self.product or self.product.price is None:
                         raise ValidationError("Product price is not set")
-                    self.price = self.product.price
+                    self.price = self.product.price 
 
                 is_new = self._state.adding
                 if not is_new and old_quantity is not None and old_price is not None:
