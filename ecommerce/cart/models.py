@@ -1,15 +1,15 @@
 from decimal import Decimal
-
+from sys import maxsize
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import F, Sum
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
-
 from ecommerce.common.models import BaseModel
 from ecommerce.products.models import Product
 from ecommerce.users.models import Profile
+import uuid
 
 
 class Cart(BaseModel):
@@ -25,10 +25,13 @@ class Cart(BaseModel):
     total_items = models.PositiveIntegerField(
         default=0, verbose_name=_("Total Items")
     )
+    
+    slug = models.SlugField(max_length=225, unique=True, blank=True)
 
     is_active = models.BooleanField(default=True)
     is_ordered = models.BooleanField(default=False)
-    slug = models.SlugField(max_length=225, unique=True, blank=True)
+    
+    
 
     class Meta:
         verbose_name = _("Cart")
@@ -37,10 +40,9 @@ class Cart(BaseModel):
     def save(self, *args, **kwargs):
         
         if not self.slug:
-            self.slug = slugify(f"cart_{self.customer.user.email}")
+            self.slug = slugify(f"cart_{self.customer.user.email}_{str(uuid.uuid4())}")
         self.clean()
         super().save(*args, **kwargs)
-        cache.delete(f"cart_totals_{self.slug}") 
     
     def clean(self):
         
@@ -97,11 +99,9 @@ class CartItem(BaseModel):
     def save(self, *args, old_quantity=None, old_price=None, **kwargs):
     
         try:
-            with transaction.atomic(): 
-                if not self.slug: 
-                    self.slug = self.product.slug
-                    
-                self.clean()
+            with transaction.atomic():
+                if not self.slug:
+                    self.slug = slugify(str(uuid.uuid4()))
                 if not self.price:
                     if not self.product or self.product.price is None:
                         raise ValidationError("Product price is not set")

@@ -1,4 +1,5 @@
 from decimal import ROUND_HALF_UP, ROUND_DOWN, Decimal
+import uuid
 
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
@@ -8,7 +9,8 @@ from django.utils.translation import gettext_lazy as _
 from ecommerce.common.models import BaseModel
 from ecommerce.cart.models import Cart
 from ecommerce.users.models import Profile
-from ecommerce.products.models import Product
+from ecommerce.products.models import Product 
+from django.utils.text import slugify
 
 
 class Order(BaseModel):
@@ -81,6 +83,8 @@ class Order(BaseModel):
     discount_amount = models.DecimalField(
         max_digits=8, decimal_places=2, default=Decimal("0.00"), verbose_name=_("Discount Amount")
     )
+    
+    slug = models.SlugField(max_length=225, unique=True, blank=True)
 
     class Meta:
         verbose_name = _("Order")
@@ -117,8 +121,7 @@ class Order(BaseModel):
         if self.tax_amount < 0:
             raise ValidationError("Tax amount cannot be negative.")
 
-        # اعتبارسنجی تطابق total_price فقط برای نمونه‌های ذخیره‌شده
-        if self.pk and self.customer_id: # type: ignore
+        if self.pk and self.customer_id and self.orderitems.exists(): # type: ignore
             expected_total = sum(item.get_total_price_item() for item in self.orderitems.all()) # type: ignore
             if abs(self.total_price - expected_total) > Decimal('0.01'):
                 raise ValidationError("Total price does not match sum of order items.")
@@ -134,6 +137,9 @@ class Order(BaseModel):
         self.discount_amount = Decimal(str(self.discount_amount)).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
         self.shipping_cost = Decimal(str(self.shipping_cost)).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
         
+        if not self.slug: 
+            self.slug = slugify(f"order_{self.customer.user.email}_{str(uuid.uuid4())}")
+            self.clean() 
         if not self.customer_id: #type: ignore
             raise ValidationError("Customer is required for Order.")
         
@@ -171,7 +177,8 @@ class OrderItem(BaseModel):
         Product, on_delete=models.CASCADE, verbose_name=_("Product")
     )
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)], verbose_name=_("Quantity"))
-    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Price"))
+    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Price")) 
+    slug = models.SlugField(max_length=225, unique=True, blank=True)
 
     class Meta:
         verbose_name = _("Order Item")
@@ -185,7 +192,13 @@ class OrderItem(BaseModel):
             raise ValidationError("Price cannot be negative.")
 
     def get_total_price_item(self):
-        return self.quantity * self.price
+        return self.quantity * self.price 
+    
+    def save(self, *args, **kwargs): 
+        if not self.slug: 
+            self.slug = slugify(str(uuid.uuid4()))
+        self.clean() 
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name} in Order {self.order.id}" #type: ignore

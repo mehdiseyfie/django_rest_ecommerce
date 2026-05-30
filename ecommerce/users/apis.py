@@ -35,7 +35,7 @@ class RegisterApi(APIView):
     class InputRegisterSerializer(serializers.Serializer):
         email = serializers.EmailField(max_length=255)
         phone = serializerfields.PhoneNumberField() 
-        address = serializers.CharField()
+        address = serializers.CharField(max_length=500, required=False, allow_blank=True)
         first_name = serializers.CharField()
         last_name = serializers.CharField() 
         
@@ -75,7 +75,7 @@ class RegisterApi(APIView):
         class Meta:
             model = BaseUser 
             fields = ("email", "phone", "token","address", 
-                      "first_name", "last_name", "address",
+                      "first_name", "last_name",
                       "created_at", "updated_at")
 
         def get_token(self, user):
@@ -101,6 +101,7 @@ class RegisterApi(APIView):
                     first_name=serializer.validated_data.get("first_name"),
                     last_name=serializer.validated_data.get("last_name"),
                     password=serializer.validated_data.get("password"),
+                    address = serializer.validated_data.get("address"),
                     )
         except Exception as ex:
             return Response(
